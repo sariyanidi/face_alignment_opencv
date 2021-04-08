@@ -2,6 +2,7 @@
 
 ```
 git clone https://github.com/sariyanidi/face_alignment_opencv.git
+cd face_alignment_opencv
 pip3 install -r requirements.txt 
 ```
 
