@@ -12,6 +12,7 @@ import os
 
 from requests import get  # to make GET request
 
+
 def download(url, file_name):
     # open in binary mode
     with open(file_name, "wb") as file:
@@ -20,9 +21,11 @@ def download(url, file_name):
         # write to file
         file.write(response.content)
 
+
 class FaceDetector:
-    
-    def __init__(self):
+    def __init__(self, threshold, device='cuda'):
+        self.threshold = threshold
+
         prototxt_url = "http://www.sariyanidi.com/media/deploy.prototxt"
         model_url = "http://www.sariyanidi.com/media/res10_300x300_ssd_iter_140000_fp16.caffemodel"
 
@@ -45,44 +48,51 @@ class FaceDetector:
             print('Done.')
         
         self.net = cv2.dnn.readNetFromCaffe(self.net_prototxt_fpath, self.net_model_fpath)
-        self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-        self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+        
+        if device == 'cuda' and cv2.cuda.getCudaEnabledDeviceCount()>0:
+            self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+        else:
+            self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
 
-    def get_single_detection(self, im):
+
+    def get_detections(self, im, single_face):
         (h, w) = im.shape[:2]
         blob = cv2.dnn.blobFromImage(cv2.resize(im, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
          
         self.net.setInput(blob)
-        detections = self.net.forward()
+        detections_raw = self.net.forward()
         
-        x0 = None
-        y0 = None
-        xf = None
-        yf = None
+        detections = []
         
         # loop over the detections
-        for i in range(0, detections.shape[2]):
+        for i in range(0, detections_raw.shape[2]):
             # extract the confidence (i.e., probability) associated with the prediction
-            confidence = detections[0, 0, i, 2]
+            confidence = detections_raw[0, 0, i, 2]
             
             # filter out weak detections by ensuring the `confidence` is
             # greater than the minimum confidence
-            if confidence < 0.5:
+            if confidence < self.threshold:
                 continue
             
             # compute the (x, y)-coordinates of the bounding box for the object
-            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+            box = detections_raw[0, 0, i, 3:7] * np.array([w, h, w, h])
             (x0, y0, xf, yf) = box.astype("int")
-            break
+            if x0 > 0 and y0 > 0 and xf < w and yf < h:
+                detections.append((x0, y0, xf, yf))
+            
+            if single_face:
+                break
         
-        return (x0, y0, xf, yf)
+        return detections
     
 
         
 
 class FaceAligner:
     
-    def __init__(self):
+    def __init__(self, device='cuda'):
         model_url = "http://www.sariyanidi.com/media/model_FAN_frozen.pb"
 
         module_dir = os.path.join(os.path.dirname(__file__), 'models')
@@ -99,12 +109,21 @@ class FaceAligner:
             print('Done.')
         
         self.net = cv2.dnn.readNetFromTensorflow(self.net_model_fpath)
-        self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-        self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
-
+        
+        if device == 'cuda' and cv2.cuda.getCudaEnabledDeviceCount()>0:
+            self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+        elif device == 'cuda' and cv2.cuda.getCudaEnabledDeviceCount() == 0:
+            self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+        elif device == 'cpu':
+            self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+    
     def get_landmarks(self, im, x0, y0, xf, yf):
         (imp, ptCenter, scale) = preprocess_image(im, x0, y0, xf, yf)
         return get_landmarks(imp, self.net, ptCenter, scale)
+
 
 def recolor_image(image, c1, c2, c3):
     image[:,:,0] = c1*image[:,:,0]
@@ -116,11 +135,13 @@ def recolor_image(image, c1, c2, c3):
 
     return image
 
+
 def rotate_image(image, angle):
     image_center = tuple(np.array(image.shape[1::-1]) / 2)
     rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
     result = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
     return result
+
 
 def scale_image(image, s):
     image_center = tuple(np.array(image.shape[1::-1], dtype=np.float32) / 2)
@@ -133,10 +154,9 @@ def scale_image(image, s):
     result = cv2.warpAffine(image, M, image.shape[1::-1], flags=cv2.INTER_LINEAR)
     return result
 
+
 def perturb_image(image, s, angle):
     return scale_image(rotate_image(image, angle), s)
-
-
 
 
 def transform(point, center, scale, resolution, invert=False):
@@ -172,7 +192,6 @@ def transform(point, center, scale, resolution, invert=False):
 
     new_point = (np.matmul(t, _pt))[0:2]
     
-
     return np.array(new_point, dtype=int)#.int()
 
 
@@ -245,8 +264,6 @@ def heatmaps_to_landmarks(hm, ptCenter, scale, resolution=64):
         px = maxLoc[0]
         py = maxLoc[1]
         
-        
-        
         if px > 0 and px < 63 and py > 0 and py < 63:
             diffx = hm[0,i,py,px+1] - hm[0,i,py,px-1]
             diffy = hm[0,i,py+1,px] - hm[0,i,py-1, px];
@@ -273,11 +290,4 @@ def heatmaps_to_landmarks(hm, ptCenter, scale, resolution=64):
 
     
     return p
-
-
-
-
-
-
-
 
