@@ -26,7 +26,7 @@ parser.add_argument("--save_result_landmarks", type=int, default=1, help="Set to
 args = parser.parse_args()
 
 if not os.path.exists(args.video_path):
-    print('Could not find file %s! Exiting.')
+    print('Could not find file %s! Exiting.' % args.video_path)
     exit()
 
 

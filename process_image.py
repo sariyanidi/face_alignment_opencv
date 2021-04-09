@@ -23,6 +23,10 @@ parser.add_argument("--save_result_landmarks", type=int, default=1, help="Set to
 
 args = parser.parse_args()
 
+if not os.path.exists(args.image_path):
+    print('Could not find file %s! Exiting.' % args.image_path)
+    exit()
+
 # Load face detector and aligner
 detector = fao.FaceDetector(threshold=args.detection_threshold, device=args.device)
 aligner = fao.FaceAligner(device=args.device)
