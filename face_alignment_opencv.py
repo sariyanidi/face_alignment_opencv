@@ -55,6 +55,8 @@ class FaceDetector:
         else:
             self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
             self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+            if device == 'cuda' and cv2.cuda.getCudaEnabledDeviceCount() == 0:
+                print('Settings ask for CUDA processing, but OpenCV has no access to CUDA-enabled devices. Method will run on CPU, which is ~10 times slower than GPU. To use GPU, make sure that your OpenCV was compiled with CUDA and CUDNN support.')
 
 
     def get_detections(self, im, single_face):
@@ -113,10 +115,7 @@ class FaceAligner:
         if device == 'cuda' and cv2.cuda.getCudaEnabledDeviceCount()>0:
             self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
             self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
-        elif device == 'cuda' and cv2.cuda.getCudaEnabledDeviceCount() == 0:
-            self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-        elif device == 'cpu':
+        else:
             self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
             self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
     
