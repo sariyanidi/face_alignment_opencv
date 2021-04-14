@@ -94,7 +94,7 @@ class FaceDetector:
 
 class FaceAligner:
     
-    def __init__(self, device='cuda'):
+    def __init__(self, device='cuda', flip_input=True):
         model_url = "http://www.sariyanidi.com/media/model_FAN_frozen.pb"
 
         module_dir = os.path.join(os.path.dirname(__file__), 'models')
@@ -111,6 +111,7 @@ class FaceAligner:
             print('Done.')
         
         self.net = cv2.dnn.readNetFromTensorflow(self.net_model_fpath)
+        self.flip_input = flip_input
         
         if device == 'cuda' and cv2.cuda.getCudaEnabledDeviceCount()>0:
             self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
@@ -119,9 +120,25 @@ class FaceAligner:
             self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
             self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
     
+    
     def get_landmarks(self, im, x0, y0, xf, yf):
         (imp, ptCenter, scale) = preprocess_image(im, x0, y0, xf, yf)
-        return get_landmarks(imp, self.net, ptCenter, scale)
+        
+        self.net.setInput(cv2.dnn.blobFromImage(np.float32(cv2.cvtColor(imp, cv2.COLOR_BGR2RGB))/255))
+        y_dnn = self.net.forward()
+        
+        if self.flip_input:
+            pairs = [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+                     26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 27, 28, 29, 30, 35,
+                     34, 33, 32, 31, 45, 44, 43, 42, 47, 46, 39, 38, 37, 36, 41,
+                     40, 54, 53, 52, 51, 50, 49, 48, 59, 58, 57, 56, 55, 64, 63,
+                     62, 61, 60, 67, 66, 65]
+            self.net.setInput(cv2.dnn.blobFromImage(np.float32(cv2.cvtColor(cv2.flip(imp,1), cv2.COLOR_BGR2RGB))/255))
+            y_dnn_flipped = self.net.forward()
+            for d in range(y_dnn_flipped.shape[1]):
+                y_dnn[0,pairs[d],:,:] += cv2.flip(y_dnn_flipped[0,d,:,:],1)
+
+        return heatmaps_to_landmarks(y_dnn, ptCenter, scale)
 
 
 def recolor_image(image, c1, c2, c3):
@@ -235,13 +252,6 @@ def crop(image, center, scale, resolution=256.0):
                         interpolation=cv2.INTER_LINEAR)
     
     return newImg
-
-
-def get_landmarks(imp, landmark_net, ptCenter, scale):
-    landmark_net.setInput(cv2.dnn.blobFromImage(np.float32(cv2.cvtColor(imp, cv2.COLOR_BGR2RGB))/255))
-    y_dnn = landmark_net.forward()
-    
-    return heatmaps_to_landmarks(y_dnn, ptCenter, scale)
 
 
 def preprocess_image(im, x0, y0, xf, yf):

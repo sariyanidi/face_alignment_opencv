@@ -16,6 +16,7 @@ import pandas as pd
 parser = argparse.ArgumentParser()
 parser.add_argument("video_path", type=str, default="./samples/la_boheme.mp4", help="Path of the image to process.")
 parser.add_argument("--single_face", type=int, default=1, help="Set to 0 for aligning one face per image or to 1 for aligning as many faces as are detected")
+parser.add_argument("--flip_input", type=int, default=1, help="Set to 1 to flip the input while making the predictions, or to 0 to to not flip. Flipping typically leads to more robust results but reduces speed by 50%.")
 parser.add_argument("--device", type=str, default='cuda', help="""Device to process. Must be set to either 'cpu' or 'cuda'. Default is 'cuda'.
                     OpenCV must be compiled with CUDA and CUDNN support to really use GPU support, otherwise the software will run on CPU.""")
 parser.add_argument("--detection_threshold", type=float, default=0.3, help="Threshold for face detection. Default is 0.3.")
@@ -44,7 +45,7 @@ if args.save_result_landmarks:
 
 # Load face detector and aligner
 detector = fao.FaceDetector(threshold=args.detection_threshold, device=args.device)
-aligner = fao.FaceAligner(device=args.device)
+aligner = fao.FaceAligner(device=args.device, flip_input=args.flip_input)
 
 cap = cv2.VideoCapture(args.video_path)
 
