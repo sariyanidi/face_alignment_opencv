@@ -65,7 +65,7 @@ for image_path in image_paths:
         np.savetxt(out_path, out, fmt='%.2f')
         
     # the rest of the code optionally visualizes and saves the results
-    if args.save_result_image or args.visualize_result:
+    if args.save_result_image:# or args.visualize_result:
         for p in landmark_sets:
             for ip in range(p.shape[0]):
                 cv2.circle(rim, (p[ip,0], p[ip,1]), 3, (0, 255, 0), -2)

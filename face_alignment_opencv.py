@@ -26,8 +26,8 @@ class FaceDetector:
     def __init__(self, threshold, device='cuda'):
         self.threshold = threshold
 
-        prototxt_url = "http://www.sariyanidi.com/media/deploy.prototxt"
-        model_url = "http://www.sariyanidi.com/media/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+        prototxt_url = "http://www.sariyanidi.com/dbox/deploy.prototxt"
+        model_url = "http://www.sariyanidi.com/dbox/res10_300x300_ssd_iter_140000_fp16.caffemodel"
 
         module_dir = os.path.join(os.path.dirname(__file__), 'models')
         if not os.path.exists(module_dir):
@@ -95,7 +95,7 @@ class FaceDetector:
 class FaceAligner:
     
     def __init__(self, device='cuda', flip_input=True):
-        model_url = "http://www.sariyanidi.com/media/model_FAN_frozen.pb"
+        model_url = "http://www.sariyanidi.com/dbox/model_FAN_frozen.pb"
 
         module_dir = os.path.join(os.path.dirname(__file__), 'models')
         if not os.path.exists(module_dir):
