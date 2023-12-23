@@ -18,7 +18,7 @@ parser.add_argument("--flip_input", type=int, default=1, help="Set to 1 to flip 
 parser.add_argument("--device", type=str, default='cuda', help="""Device to process. Must be set to either 'cpu' or 'cuda'. Default is 'cuda'.
                     OpenCV must be compiled with CUDA and CUDNN support to really use GPU support, otherwise the software will run on CPU.""")
 parser.add_argument("--detection_threshold", type=float, default=0.3, help="Threshold for face detection. Default is 0.3.")
-parser.add_argument("--visualize_result", type=int, default=1, help="Set to 1 (Default) to visualize face alignment to 0 to skip visualization.")
+parser.add_argument("--visualize_result", type=int, default=0, help="Set to 1 (Default) to visualize face alignment to 0 to skip visualization.")
 parser.add_argument("--save_result_image", type=int, default=1, help="Set to 1 (Default) to save the resulting image (next to the original file) or to 0 otherwise")
 parser.add_argument("--save_result_landmarks", type=int, default=1, help="Set to 1 (Default) to save resulting landmarks as .txt file or to 0 otherwise")
 
