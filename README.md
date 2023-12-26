@@ -7,14 +7,15 @@ The simplest way to install FAO is to use `pip` as follows. **But**, this will b
 ```
 git clone https://github.com/sariyanidi/face_alignment_opencv.git
 cd face_alignment_opencv
-pip3 install -r requirements_cpu.txt 
+pip install --upgrade pip
+pip install -r requirements_cpu.txt 
 ```
 
 If you want to use FAO with GPU support (~100 FPS), you need to manually compile OpenCV with CUDA and CUDNN support. In this case, you should make sure that the repository does *not* use the OpenCV installed through `pip`, but the one that you manually compiled. Once you manually install OpenCV, then the following lines will suffice to use FAO with cuda support.
 ```
 git clone https://github.com/sariyanidi/face_alignment_opencv.git
 cd face_alignment_opencv
-pip3 install -r requirements_gpu.txt 
+pip install -r requirements_gpu.txt 
 ```
 
 
