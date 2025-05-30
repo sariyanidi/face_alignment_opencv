@@ -20,8 +20,7 @@ parser.add_argument("--flip_input", type=int, default=1, help="Set to 1 to flip 
 parser.add_argument("--device", type=str, default='cuda', help="""Device to process. Must be set to either 'cpu' or 'cuda'. Default is 'cuda'.
                     OpenCV must be compiled with CUDA and CUDNN support to really use GPU support, otherwise the software will run on CPU.""")
 parser.add_argument("--detection_threshold", type=float, default=0.3, help="Threshold for face detection. Default is 0.3.")
-parser.add_argument("--visualize_result", type=int, default=1, help="Set to 1 (Default) to visualize face alignment to 0 to skip visualization.")
-parser.add_argument("--save_result_video", type=int, default=1, help="Set to 1 (Default) to save the resulting image (next to the original file) or to 0 otherwise")
+parser.add_argument("--save_result_video", type=int, default=0, help="Set to 1 (Default) to save the resulting image (next to the original file) or to 0 otherwise")
 parser.add_argument("--save_result_landmarks", type=int, default=1, help="Set to 1 (Default) to save resulting landmarks as .txt file or to 0 otherwise")
 
 args = parser.parse_args()
@@ -82,16 +81,13 @@ while(True):
                 data['x%d'%ip].append(p[ip,0])
                 data['y%d'%ip].append(p[ip,1])
             
-            if args.visualize_result or args.save_result_video:
+            if args.save_result_video:
                 cv2.circle(frame, (p[ip,0], p[ip,1]), 3, (0, 255, 0), -2)
     
-    if args.visualize_result:
-        cap_result.write(frame)
 print('\n')
     
 # When everything done, release the capture
 cap.release()
-cv2.destroyAllWindows()
 
 if args.save_result_video:
     cap_result.release()
@@ -106,5 +102,4 @@ if args.save_result_landmarks:
     df.to_csv(csv_path, index=False)
     
     print('Saved facial landmarks to %s' % csv_path)
-
 
