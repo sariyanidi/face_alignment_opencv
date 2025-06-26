@@ -83,6 +83,17 @@ while(True):
             
             if args.save_result_video:
                 cv2.circle(frame, (p[ip,0], p[ip,1]), 3, (0, 255, 0), -2)
+        #cv2.imshow("hey", frame)
+        #cv2.waitKey(6)
+    if len(detections) == 0:
+        if args.save_result_landmarks:
+            data['face_id'].append(-1)
+        for ip in range(68):
+            if args.save_result_landmarks:
+                data['x%d'%ip].append(np.nan)
+                data['y%d'%ip].append(np.nan)
+    if args.save_result_video:
+        cap_result.write(frame)
     
 print('\n')
     
